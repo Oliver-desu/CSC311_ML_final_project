@@ -1,6 +1,6 @@
 from sklearn.impute import KNNImputer
 from utils import *
-
+import matplotlib.pyplot as plt
 
 def knn_impute_by_user(matrix, valid_data, k):
     """ Fill in the missing values using k-Nearest Neighbors based on
@@ -19,7 +19,7 @@ def knn_impute_by_user(matrix, valid_data, k):
     # We use NaN-Euclidean distance measure.
     mat = nbrs.fit_transform(matrix)
     acc = sparse_matrix_evaluate(valid_data, mat)
-    print("Validation Accuracy: {}".format(acc))
+    print("Validation Accuracy on user: {}".format(acc))
     return acc
 
 
@@ -37,11 +37,16 @@ def knn_impute_by_item(matrix, valid_data, k):
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
-    acc = None
+    nbrs = KNNImputer(n_neighbors=k)
+    # We use NaN-Euclidean distance measure.
+    mat = nbrs.fit_transform(matrix.T)
+    acc = sparse_matrix_evaluate(valid_data, mat.T)
+    print("Validation Accuracy on question: {}".format(acc))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
     return acc
+
 
 
 def main():
@@ -60,7 +65,21 @@ def main():
     # the best performance and report the test accuracy with the        #
     # chosen k*.                                                        #
     #####################################################################
-    pass
+    k_set = [1, 6, 11, 16, 21, 26]
+    acc1 = []
+    for k in k_set:
+        acc1.append(knn_impute_by_user(sparse_matrix, val_data, k))
+        # acc.append(knn_impute_by_item(sparse_matrix, val_data, k))
+    plt.plot(k_set, acc1)
+    plt.show()
+
+    acc2 = []
+    for k in k_set:
+        # acc.append(knn_impute_by_user(sparse_matrix, val_data, k))
+        acc2.append(knn_impute_by_item(sparse_matrix, val_data, k))
+    plt.plot(k_set, acc2)
+    plt.show()
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################

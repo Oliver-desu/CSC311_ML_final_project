@@ -1,6 +1,7 @@
 from utils import *
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def sigmoid(x):
@@ -21,10 +22,20 @@ def neg_log_likelihood(data, theta, beta):
     :return: float
     """
     #####################################################################
-    # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
     log_lklihood = 0.
+    num_data = len(data["user_id"])
+    for index in range(num_data):
+        answer = data["is_correct"][index]
+        j = data["question_id"][index]
+        i = data["user_id"][index]
+        d = theta[i] - beta[j]
+        if answer == 1:
+            log_lklihood += d - np.log(1+np.exp(d))
+        elif answer == 0:
+            log_lklihood += - np.log(1+np.exp(d))
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -49,10 +60,27 @@ def update_theta_beta(data, lr, theta, beta):
     :return: tuple of vectors
     """
     #####################################################################
-    # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
-    pass
+    d_theta = np.zeros(theta.shape)
+    d_beta = np.zeros(beta.shape)
+    num_data = len(data["user_id"])
+    for index in range(num_data):
+        answer = data["is_correct"][index]
+        j = data["question_id"][index]
+        i = data["user_id"][index]
+        d = theta[i] - beta[j]
+        if answer == 1:
+            d_theta[i] += 1 / (1+np.exp(d))
+            d_beta[j] += -1 / (1+np.exp(d))
+        elif answer == 0:
+            d_theta[i] += 1 / (1+np.exp(d)) - 1
+            d_beta[j] += -1 / (1+np.exp(d)) + 1
+    # Here we want to maximize likelihood which is a concave function, instead
+    # of decent, we actually accent.
+    theta += lr*d_theta
+    beta += lr*d_beta
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -72,11 +100,12 @@ def irt(data, val_data, lr, iterations):
     :param iterations: int
     :return: (theta, beta, val_acc_lst)
     """
-    # TODO: Initialize theta and beta.
-    theta = None
-    beta = None
+    theta = np.zeros(1+max(data["user_id"]))
+    beta = np.zeros(1+max(data["question_id"]))
 
     val_acc_lst = []
+    train_lld_lst = []
+    val_lld_lst = []
 
     for i in range(iterations):
         neg_lld = neg_log_likelihood(data, theta=theta, beta=beta)
@@ -85,8 +114,11 @@ def irt(data, val_data, lr, iterations):
         print("NLLK: {} \t Score: {}".format(neg_lld, score))
         theta, beta = update_theta_beta(data, lr, theta, beta)
 
-    # TODO: You may change the return values to achieve what you want.
-    return theta, beta, val_acc_lst
+        train_lld_lst.append(neg_lld)
+        val_lld = neg_log_likelihood(val_data, theta=theta, beta=beta)
+        val_lld_lst.append(val_lld)
+
+    return theta, beta, val_acc_lst, train_lld_lst, val_lld_lst
 
 
 def evaluate(data, theta, beta):
@@ -105,31 +137,51 @@ def evaluate(data, theta, beta):
         p_a = sigmoid(x)
         pred.append(p_a >= 0.5)
     return np.sum((data["is_correct"] == np.array(pred))) \
-           / len(data["is_correct"])
+        / len(data["is_correct"])
 
 
 def main():
     train_data = load_train_csv("../data")
     # You may optionally use the sparse matrix.
-    sparse_matrix = load_train_sparse("../data")
+    # sparse_matrix = load_train_sparse("../data")
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
     #####################################################################
-    # TODO:                                                             #
     # Tune learning rate and number of iterations. With the implemented #
     # code, report the validation and test accuracy.                    #
     #####################################################################
-    pass
+    lr = 0.01
+    iterations = 20
+
+    theta, beta, val_acc_lst, train_lld_lst, val_lld_lst = \
+        irt(train_data, val_data, lr, iterations)
+    iterations_lst = list(range(iterations))
+
+    plt.plot(iterations_lst, train_lld_lst, "r-", label="training")
+    plt.plot(iterations_lst, val_lld_lst, "b-", label="validation")
+    plt.xlabel("Iterations")
+    plt.ylabel("Negative likelihood")
+    plt.legend()
+    plt.show()
+
+    plt.plot(iterations_lst, val_acc_lst)
+    plt.xlabel("Iterations")
+    plt.ylabel("Validation accuracy")
+    plt.show()
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
 
     #####################################################################
-    # TODO:                                                             #
-    # Implement part (c)                                                #
+    # Implement part (c)
     #####################################################################
-    pass
+    val_acc = evaluate(val_data, theta, beta)
+    test_acc = evaluate(test_data, theta, beta)
+    print("Validation accuracy: {}".format(val_acc))
+    print("Test accuracy: {}".format(test_acc))
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################

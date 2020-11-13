@@ -2,6 +2,7 @@ from sklearn.impute import KNNImputer
 from utils import *
 import matplotlib.pyplot as plt
 
+
 def knn_impute_by_user(matrix, valid_data, k):
     """ Fill in the missing values using k-Nearest Neighbors based on
     student similarity. Return the accuracy on valid_data.
@@ -34,7 +35,6 @@ def knn_impute_by_item(matrix, valid_data, k):
     :return: float
     """
     #####################################################################
-    # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
     nbrs = KNNImputer(n_neighbors=k)
@@ -48,7 +48,6 @@ def knn_impute_by_item(matrix, valid_data, k):
     return acc
 
 
-
 def main():
     sparse_matrix = load_train_sparse("../data").toarray()
     val_data = load_valid_csv("../data")
@@ -60,7 +59,6 @@ def main():
     print(sparse_matrix.shape)
 
     #####################################################################
-    # TODO:                                                             #
     # Compute the validation accuracy for each k. Then pick k* with     #
     # the best performance and report the test accuracy with the        #
     # chosen k*.                                                        #
@@ -72,6 +70,10 @@ def main():
         # acc.append(knn_impute_by_item(sparse_matrix, val_data, k))
     plt.plot(k_set, acc1)
     plt.show()
+    k_1 = k_set[acc1.index(max(acc1))]
+    test_acc1 = knn_impute_by_user(sparse_matrix, test_data, k_1)
+    print("Test performance base on {0} with k = {1} is {2}"
+          .format("user", k_1, test_acc1))
 
     acc2 = []
     for k in k_set:
@@ -79,6 +81,10 @@ def main():
         acc2.append(knn_impute_by_item(sparse_matrix, val_data, k))
     plt.plot(k_set, acc2)
     plt.show()
+    k_2 = k_set[acc2.index(max(acc2))]
+    test_acc2 = knn_impute_by_item(sparse_matrix, test_data, k_2)
+    print("Test performance base on {0} with k = {1} is {2}"
+          .format("item", k_2, test_acc2))
 
     #####################################################################
     #                       END OF YOUR CODE                            #

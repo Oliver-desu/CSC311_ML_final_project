@@ -38,11 +38,12 @@ def load_subject(root_dir="../data"):
 
 
 def classify_subjects(data):
-    """ Evaluate the model given data and return the accuracy.
-        :param data: A dictionary {user_id: list, question_id: list,
-        is_correct: list}
-        :return: A dictionary {int: data}
-        """
+    """ Evaluate the model given data and return data split into different
+    subject.
+    :param data: A dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    :return: A dictionary {int(subject id): data}
+    """
     # According to subject_meta, subjects id through 0 - 387.
     num_subject = 388
     subject_data = {}
@@ -56,6 +57,24 @@ def classify_subjects(data):
             subject_data[subject]["question_id"].append(q)
             subject_data[subject]["is_correct"].append(data["is_correct"][i])
     return subject_data
+
+
+def classify_question(data, question_id):
+    """ Filter data by a particular question.
+
+    :param data: A dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    :param question_id: int
+    :return: question_data: A dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    """
+    question_data = {"user_id": [], "question_id": [], "is_correct": []}
+    for i, q in enumerate(data["question_id"]):
+        if q == question_id:
+            question_data["question_id"].append(q)
+            question_data["user_id"].append(data["user_id"][i])
+            question_data["is_correct"].append(data["is_correct"][i])
+    return question_data
 
 
 def _test():

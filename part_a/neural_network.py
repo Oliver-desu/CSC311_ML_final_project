@@ -70,7 +70,11 @@ class AutoEncoder(nn.Module):
         # Implement the function as described in the docstring.             #
         # Use sigmoid activations for f and g.                              #
         #####################################################################
-        out = inputs
+        z1 = self.g.forward(inputs)
+        h1 = F.sigmoid(z1)
+        z2 = self.h.forward(h1)
+        h2 = F.sigmoid(z2)
+        out = h2
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -91,7 +95,7 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     :return: None
     """
     # TODO: Add a regularizer to the cost function. 
-    
+
     # Tell PyTorch you are training the model.
     model.train()
 
@@ -113,7 +117,7 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
             nan_mask = np.isnan(train_data[user_id].unsqueeze(0).numpy())
             target[0][nan_mask] = output[0][nan_mask]
 
-            loss = torch.sum((output - target) ** 2.)
+            loss = torch.sum((output - target) ** 2.) + 0.5*lamb*(model.get_weight_norm())   # loss function
             loss.backward()
 
             train_loss += loss.item()
@@ -161,17 +165,22 @@ def main():
     # Try out 5 different k and select the best k using the             #
     # validation set.                                                   #
     #####################################################################
+    num_questions = train_matrix.size()[1]
+    num_users = train_matrix.size()[0]
+    k_set = [10, 50, 100, 200, 500]
+    lamb_set = [0, 0.001, 0.01, 0.1, 1]
     # Set model hyperparameters.
-    k = None
-    model = None
+    k = k_set[0]
+    model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
-    lr = None
-    num_epoch = None
-    lamb = None
+    lr = 0.01
+    num_epoch = 100
+    lamb = lamb_set[0]
 
     train(model, lr, lamb, train_matrix, zero_train_matrix,
           valid_data, num_epoch)
+    print(evaluate(model, zero_train_matrix, test_data))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################

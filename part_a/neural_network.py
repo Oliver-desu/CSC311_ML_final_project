@@ -8,7 +8,7 @@ import torch.utils.data
 
 import numpy as np
 import torch
-
+import matplotlib.pyplot as plt
 
 def load_data(base_path="../data"):
     """ Load the data in PyTorch Tensor.
@@ -102,7 +102,8 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     # Define optimizers and loss function.
     optimizer = optim.SGD(model.parameters(), lr=lr)
     num_student = train_data.shape[0]
-
+    lst_trainloss = []
+    lst_validacc = []
     for epoch in range(0, num_epoch):
         train_loss = 0.
 
@@ -126,10 +127,29 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
         valid_acc = evaluate(model, zero_train_data, valid_data)
         print("Epoch: {} \tTraining Cost: {:.6f}\t "
               "Valid Acc: {}".format(epoch, train_loss, valid_acc))
+        lst_trainloss.append(train_loss)
+        lst_validacc.append(valid_acc)
+    gen_plot(lst_trainloss,lst_validacc)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
 
+
+def gen_plot(lst1, lst2):
+    fig, ax1 = plt.subplots()
+    t = np.arange(len(lst2))
+    color = 'tab:red'
+    ax1.set_xlabel('epochs')
+    ax1.set_ylabel('validation accuracy', color=color)
+    ax1.plot(t, lst2, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    color = 'tab:blue'
+    ax2.set_ylabel('training loss', color=color)  # we already handled the x-label with ax1
+    ax2.plot(t, lst1, color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
 
 def evaluate(model, train_data, valid_data):
     """ Evaluate the valid_data on the current model.
@@ -170,13 +190,13 @@ def main():
     k_set = [10, 50, 100, 200, 500]
     lamb_set = [0, 0.001, 0.01, 0.1, 1]
     # Set model hyperparameters.
-    k = k_set[0]
+    k = k_set[1]
     model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
     lr = 0.01
-    num_epoch = 100
-    lamb = lamb_set[0]
+    num_epoch = 10
+    lamb = lamb_set[3]
 
     train(model, lr, lamb, train_matrix, zero_train_matrix,
           valid_data, num_epoch)

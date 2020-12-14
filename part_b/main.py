@@ -1,5 +1,5 @@
 from part_a.item_response import *
-from part_b.utils_b import classify_subjects, classify_question, load_subject
+from part_b.utils_b import *
 
 
 def simple_irt(data, lr, iterations):
@@ -65,10 +65,9 @@ def probability(diff, weights):
 
 def _helper_grad(diff, weights, correct):
     # helper function of grad
-    left = correct - probability(diff, weights)
     result = {}
     for i in diff:
-        result[i] = -left*diff[i]
+        result[i] = (probability(diff, weights)-correct) * diff[i]
     return result
 
 
@@ -92,6 +91,9 @@ class AdvanceIRT:
         self.theta = theta
         self.beta = beta
         self.q_weights = {}
+        self.reliability = {}
+        for s in range(NUM_SUBJECT):
+            self.reliability[s] = 0.01
 
     def validation(self, val_data):
         # return validation accuracy
@@ -102,9 +104,12 @@ class AdvanceIRT:
             prediction = self.predict(q, s, self.subject_dict[q])
             if prediction == val_data["is_correct"][i]:
                 count += 1
+        print(count, total)
         return count/total
 
     def compare(self, val_data):
+        # Compute accuracy difference between advanced irt and simple irt for
+        # different question
         for question_id in self.subject_dict:
             data = classify_question(val_data, question_id)
             if len(data["user_id"]) == 0:
@@ -117,7 +122,8 @@ class AdvanceIRT:
             acc1 = self.validation(data)
             self.q_weights[question_id] = weights
             acc2 = self.validation(data)
-            print(question_id, acc2 - acc1)
+            print("question {0} acc improved by {1}".format(question_id,
+                                                            acc2-acc1))
 
     def predict(self, question_id, student_id, subjects):
         # predict whether student i can solve question j correctly
@@ -129,7 +135,7 @@ class AdvanceIRT:
         else:
             return 1
 
-    def train3(self, lr, iterations, regulation):
+    def train(self, lr, iterations, regulation):
         """ Train the model by gradient decent
 
         :param lr: learning rate
@@ -176,13 +182,63 @@ class AdvanceIRT:
 
     def ability_difference(self, question_id, student_id, subjects):
         # return ability of student minus difficulty of question in each subject
-
         diff = {-1: self.theta[student_id, -1] - self.beta[question_id, -1]}
         for i in subjects:
             if np.isnan(self.theta[student_id, i]):
                 continue
             diff[i] = self.theta[student_id, i] - self.beta[question_id, i]
+            diff[i] *= self.reliability[i]
         return diff
+
+    def compute_reliability(self, factor, mid):
+        # give each subject data a reliability. If data size is large then
+        # reliability is higher(at most 1), reliability at mid is exactly 1/2
+        subject_data = classify_subjects(self.data)
+        for s in range(NUM_SUBJECT):
+            size = len(subject_data[s]["user_id"])
+            self.reliability[s] = 1/(1+np.exp(-factor*(size-mid)))
+
+    def filter(self):
+        # filter out the data that is not reliable(spam)
+        i = 0
+        while i != len(self.data["user_id"]):
+            if self.is_spam(i):
+                self.pop_data(i)
+            else:
+                i += 1
+
+    def pop_data(self, index):
+        # remove a particular data point
+        self.data["user_id"].pop(index)
+        self.data["question_id"].pop(index)
+        self.data["is_correct"].pop(index)
+
+    def is_spam(self, index):
+        # If student i has less ability than difficulty of question j in every
+        # subject and do the question correctly, he maybe done this by guessing.
+        q = self.data["question_id"][index]
+        s = self.data["user_id"][index]
+        subjects = self.subject_dict[q] + [-1]
+        if self.data["is_correct"][index] == 1:
+            for i in subjects:
+                if self.theta[s, i] > self.beta[q, i]:
+                    return False
+        return True
+
+
+class SimpleIRT:
+    def __init__(self, data):
+        self.theta, self.beta = simple_irt(data, lr=0.01, iterations=20)
+
+    def validation(self, val_data):
+        prediction = []
+        for i, q in enumerate(val_data["question_id"]):
+            u = val_data["user_id"][i]
+            x = (self.theta[u] - self.beta[q]).sum()
+            p = sigmoid(x)
+            prediction.append(p >= 0.5)
+        return np.sum((val_data["is_correct"] == np.array(prediction))) / \
+            len(val_data["is_correct"])
 
 
 def save(file_name, data):
@@ -199,30 +255,48 @@ def load(file_name):
     return dict(np.load(file_name))
 
 
-def _test():
+def _test(load_model=True, observe=False, filtered=False, advanced=True):
     train_data = load_train_csv("../data")
     val_data = load_valid_csv("../data")
+    test_data = load_public_test_csv("../data")
     subject_dict = load_subject()
 
-    # theta, beta = subject_irt(train_data, 0.01, 20)
-    # save("theta", theta)
-    # save("beta", beta)
-    theta, beta = load("theta.npz")["arr_0"], load("beta.npz")["arr_0"]
+    if not load_model:
+        theta, beta = subject_irt(train_data, lr=0.01, iterations=20)
+        save("theta", theta)
+        save("beta", beta)
+    else:
+        theta, beta = load("theta.npz")["arr_0"], load("beta.npz")["arr_0"]
 
-    model = AdvanceIRT(train_data, subject_dict, theta, beta)
-    model.train3(1, 50, 1)
-    model.compare(val_data)
+    if filtered:
+        model = AdvanceIRT(train_data, subject_dict, theta, beta)
+        model.filter()
+        train_data = model.data
+
+    if advanced:
+        model = AdvanceIRT(train_data, subject_dict, theta, beta)
+        model.train(lr=1, iterations=50, regulation=1)
+        # model.compare(val_data)
+    else:
+        model = SimpleIRT(train_data)
+
+    acc = model.validation(train_data)
+    print("Training accuracy: {}".format(acc))
     acc = model.validation(val_data)
-    print(acc)
+    print("Validation accuracy: {}".format(acc))
+    acc = model.validation(test_data)
+    print("Test accuracy: {}".format(acc))
 
-    # # Observe ability difference for question 0
-    # data2 = classify_question(train_data, 0)
-    # for i, s in enumerate(data2["user_id"]):
-    #     lst = [data2["is_correct"][i]]
-    #     for j in load_subject()[0]:
-    #         lst.append(model.theta[s, j]-model.beta[0, j])
-    #     print(lst)
+    if observe:
+        # Observe ability difference for question 0
+        data2 = classify_question(train_data, 0)
+        for i, s in enumerate(data2["user_id"]):
+            lst = [data2["is_correct"][i]]
+            for j in load_subject()[0]:
+                lst.append(model.theta[s, j]-model.beta[0, j])
+            print(lst)
 
 
 if __name__ == "__main__":
+    _test(filtered=False, advanced=False)
     _test()

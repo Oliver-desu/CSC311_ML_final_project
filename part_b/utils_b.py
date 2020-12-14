@@ -1,4 +1,6 @@
 from utils import *
+# According to subject_meta, subjects id through 0 - 387.
+NUM_SUBJECT = 388
 
 
 def _load_subject(path):
@@ -44,10 +46,8 @@ def classify_subjects(data):
     is_correct: list}
     :return: A dictionary {int(subject id): data}
     """
-    # According to subject_meta, subjects id through 0 - 387.
-    num_subject = 388
     subject_data = {}
-    for i in range(num_subject):
+    for i in range(NUM_SUBJECT):
         subject_data[i] = {"user_id": [], "question_id": [], "is_correct": []}
 
     subject_dict = load_subject()

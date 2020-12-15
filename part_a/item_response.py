@@ -158,6 +158,8 @@ def main():
         irt(train_data, val_data, lr, iterations)
     iterations_lst = list(range(iterations))
 
+    print(np.max(beta), np.min(beta), beta[0], beta[1], beta[-1])
+
     plt.plot(iterations_lst, train_lld_lst, "r-", label="training")
     plt.plot(iterations_lst, val_lld_lst, "b-", label="validation")
     plt.xlabel("Iterations")

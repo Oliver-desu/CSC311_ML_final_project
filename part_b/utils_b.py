@@ -77,14 +77,26 @@ def classify_question(data, question_id):
     return question_data
 
 
-def gen_random_sample(data, size):
+def gen_random_sample(data, size, fix_lst):
+    """ generate random data sample with desire size and contain data point
+    from fix_lst
+
+    :param data: entire data set
+    :param size: size of generate sample
+    :param fix_lst: The list of data point generate sample should always contain
+    :return: a random sample
+    """
     data_size = len(data["question_id"])
     sample = {
         "user_id": [],
         "question_id": [],
         "is_correct": []
     }
-    for i in np.random.choice(data_size, size):
+    for i in np.random.choice(data_size, size-len(fix_lst)):
+        sample["user_id"].append(data["user_id"][i])
+        sample["question_id"].append(data["question_id"][i])
+        sample["is_correct"].append(data["is_correct"][i])
+    for i in fix_lst:
         sample["user_id"].append(data["user_id"][i])
         sample["question_id"].append(data["question_id"][i])
         sample["is_correct"].append(data["is_correct"][i])

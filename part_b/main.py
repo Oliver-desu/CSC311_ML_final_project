@@ -226,7 +226,8 @@ class AdvanceIRT:
             for i in subjects:
                 if self.theta[s, i]-self.beta[q, i] > threshold:
                     return False
-        return True
+            return True
+        return False
 
 
 class SimpleIRT:
@@ -252,15 +253,15 @@ def compute_variance(train_data, num_model=10, size=1000):
     subject_dict = load_subject()
     advanced_result = np.zeros(num_model)
     simple_result = np.zeros(num_model)
+    q = train_data["question_id"][0]
+    s = train_data["user_id"][1]
     for i in range(num_model):
-        sample_data = gen_random_sample(train_data, size)
+        sample_data = gen_random_sample(train_data, size, [0, 1])
         theta, beta = subject_irt(sample_data, lr=0.01, iterations=20)
         model1 = AdvanceIRT(sample_data, subject_dict, theta, beta)
         model1.train(lr=1, iterations=50, regulation=1)
         model2 = SimpleIRT(sample_data)
 
-        q = sample_data["question_id"][0]
-        s = sample_data["user_id"][1]
         advanced_result[i] = model1.predict_p(q, s, subject_dict[q])
         simple_result[i] = model2.predict_p(q, s)
     print("num_model: {0} sample size: {1}".format(num_model, size))
@@ -282,7 +283,7 @@ def load(file_name):
     return dict(np.load(file_name))
 
 
-def _test(load_model=True, observe=False, filtered=False, advanced=True):
+def _test(load_model=True, observe=False, filtered=True, advanced=True):
     train_data = load_train_csv("../data")
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
@@ -327,5 +328,4 @@ def _test(load_model=True, observe=False, filtered=False, advanced=True):
 
 
 if __name__ == "__main__":
-    _test(filtered=False, advanced=False)
     _test()

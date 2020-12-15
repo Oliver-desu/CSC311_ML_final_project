@@ -85,7 +85,7 @@ def normalize(weights):
 
 
 class AdvanceIRT:
-    def __init__(self, data, subject_dict, theta, beta):
+    def __init__(self, data, subject_dict, theta, beta, reliability=0.01):
         self.data = data
         self.subject_dict = subject_dict
         self.theta = theta
@@ -93,7 +93,7 @@ class AdvanceIRT:
         self.q_weights = {}
         self.reliability = {}
         for s in range(NUM_SUBJECT):
-            self.reliability[s] = 0.01
+            self.reliability[s] = reliability
 
     def validation(self, val_data):
         # return validation accuracy
@@ -127,13 +127,16 @@ class AdvanceIRT:
 
     def predict(self, question_id, student_id, subjects):
         # predict whether student i can solve question j correctly
-        weights = self.q_weights[question_id]
-        diff = self.ability_difference(question_id, student_id, subjects)
-        p = probability(diff, weights)
+        p = self.predict_p(question_id, student_id, subjects)
         if p < 0.5:
             return 0
         else:
             return 1
+
+    def predict_p(self, question_id, student_id, subjects):
+        weights = self.q_weights[question_id]
+        diff = self.ability_difference(question_id, student_id, subjects)
+        return probability(diff, weights)
 
     def train(self, lr, iterations, regulation):
         """ Train the model by gradient decent
@@ -153,7 +156,7 @@ class AdvanceIRT:
         subjects = self.subject_dict[question_id]
         weights = {-1: 1}
         for i in subjects:
-            weights[i] = 1
+            weights[i] = 0
 
         for iteration in range(iterations):
             grad = self.grad(question_id, data["user_id"], data["is_correct"],
@@ -191,18 +194,18 @@ class AdvanceIRT:
         return diff
 
     def compute_reliability(self, factor, mid):
-        # give each subject data a reliability. If data size is large then
+        # give each subject data reliability. If data size is large then
         # reliability is higher(at most 1), reliability at mid is exactly 1/2
         subject_data = classify_subjects(self.data)
         for s in range(NUM_SUBJECT):
             size = len(subject_data[s]["user_id"])
             self.reliability[s] = 1/(1+np.exp(-factor*(size-mid)))
 
-    def filter(self):
+    def filter(self, threshold=-0.1):
         # filter out the data that is not reliable(spam)
         i = 0
         while i != len(self.data["user_id"]):
-            if self.is_spam(i):
+            if self.is_spam(i, threshold):
                 self.pop_data(i)
             else:
                 i += 1
@@ -213,7 +216,7 @@ class AdvanceIRT:
         self.data["question_id"].pop(index)
         self.data["is_correct"].pop(index)
 
-    def is_spam(self, index):
+    def is_spam(self, index, threshold):
         # If student i has less ability than difficulty of question j in every
         # subject and do the question correctly, he maybe done this by guessing.
         q = self.data["question_id"][index]
@@ -221,7 +224,7 @@ class AdvanceIRT:
         subjects = self.subject_dict[q] + [-1]
         if self.data["is_correct"][index] == 1:
             for i in subjects:
-                if self.theta[s, i] > self.beta[q, i]:
+                if self.theta[s, i]-self.beta[q, i] > threshold:
                     return False
         return True
 
@@ -239,6 +242,30 @@ class SimpleIRT:
             prediction.append(p >= 0.5)
         return np.sum((val_data["is_correct"] == np.array(prediction))) / \
             len(val_data["is_correct"])
+
+    def predict_p(self, q, u):
+        x = (self.theta[u] - self.beta[q]).sum()
+        return sigmoid(x)
+
+
+def compute_variance(train_data, num_model=10, size=1000):
+    subject_dict = load_subject()
+    advanced_result = np.zeros(num_model)
+    simple_result = np.zeros(num_model)
+    for i in range(num_model):
+        sample_data = gen_random_sample(train_data, size)
+        theta, beta = subject_irt(sample_data, lr=0.01, iterations=20)
+        model1 = AdvanceIRT(sample_data, subject_dict, theta, beta)
+        model1.train(lr=1, iterations=50, regulation=1)
+        model2 = SimpleIRT(sample_data)
+
+        q = sample_data["question_id"][0]
+        s = sample_data["user_id"][1]
+        advanced_result[i] = model1.predict_p(q, s, subject_dict[q])
+        simple_result[i] = model2.predict_p(q, s)
+    print("num_model: {0} sample size: {1}".format(num_model, size))
+    print("AdvanceIRT Variance: {}".format(np.var(advanced_result)))
+    print("SimpleIRT Variance: {}".format(np.var(simple_result)))
 
 
 def save(file_name, data):
@@ -260,6 +287,8 @@ def _test(load_model=True, observe=False, filtered=False, advanced=True):
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
     subject_dict = load_subject()
+
+    compute_variance(train_data)
 
     if not load_model:
         theta, beta = subject_irt(train_data, lr=0.01, iterations=20)

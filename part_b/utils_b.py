@@ -77,6 +77,20 @@ def classify_question(data, question_id):
     return question_data
 
 
+def gen_random_sample(data, size):
+    data_size = len(data["question_id"])
+    sample = {
+        "user_id": [],
+        "question_id": [],
+        "is_correct": []
+    }
+    for i in np.random.choice(data_size, size):
+        sample["user_id"].append(data["user_id"][i])
+        sample["question_id"].append(data["question_id"][i])
+        sample["is_correct"].append(data["is_correct"][i])
+    return sample
+
+
 def _test():
     data1 = load_train_csv("../data")
     print(classify_subjects(data1)[0])

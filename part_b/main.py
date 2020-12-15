@@ -125,8 +125,10 @@ class AdvanceIRT:
             print("question {0} acc improved by {1}".format(question_id,
                                                             acc2-acc1))
 
-    def predict(self, question_id, student_id, subjects):
+    def predict(self, question_id, student_id, subjects=None):
         # predict whether student i can solve question j correctly
+        if subjects is None:
+            subjects = self.subject_dict[question_id]
         p = self.predict_p(question_id, student_id, subjects)
         if p < 0.5:
             return 0
@@ -289,7 +291,7 @@ def _test(load_model=True, observe=False, filtered=True, advanced=True):
     test_data = load_public_test_csv("../data")
     subject_dict = load_subject()
 
-    compute_variance(train_data)
+    # compute_variance(train_data)
 
     if not load_model:
         theta, beta = subject_irt(train_data, lr=0.01, iterations=20)
@@ -309,6 +311,14 @@ def _test(load_model=True, observe=False, filtered=True, advanced=True):
         # model.compare(val_data)
     else:
         model = SimpleIRT(train_data)
+
+    private_test = load_private_test_csv("../data")
+    predictions = []
+    for i, q in enumerate(private_test["question_id"]):
+        s = private_test["user_id"][i]
+        predictions.append(model.predict(q, s))
+    private_test["is_correct"] = predictions
+    save_private_test_csv(private_test)
 
     acc = model.validation(train_data)
     print("Training accuracy: {}".format(acc))

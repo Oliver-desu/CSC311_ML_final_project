@@ -129,7 +129,7 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
               "Valid Acc: {}".format(epoch, train_loss, valid_acc))
         lst_trainloss.append(train_loss)
         lst_validacc.append(valid_acc)
-    gen_plot(lst_trainloss,lst_validacc)
+    return lst_trainloss, lst_validacc
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -198,8 +198,9 @@ def main():
     num_epoch = 10
     lamb = lamb_set[3]
 
-    train(model, lr, lamb, train_matrix, zero_train_matrix,
+    lst_trainloss, lst_validacc = train(model, lr, lamb, train_matrix, zero_train_matrix,
           valid_data, num_epoch)
+    gen_plot(lst_trainloss,lst_validacc)
     print(evaluate(model, zero_train_matrix, test_data))
     #####################################################################
     #                       END OF YOUR CODE                            #

@@ -69,10 +69,9 @@ def update_u_z(train_data, lr, u, z):
     :param z: 2D matrix
     :return: (u, z)
     """
-    #####################################################################
+
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
-    #####################################################################
     # Randomly select a pair (user_id, question_id).
     i = \
         np.random.choice(len(train_data["question_id"]), 1)[0]
@@ -80,9 +79,7 @@ def update_u_z(train_data, lr, u, z):
     c = train_data["is_correct"][i]
     n = train_data["user_id"][i]
     q = train_data["question_id"][i]
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
+
     return u, z
 
 
@@ -102,14 +99,12 @@ def als(train_data, k, lr, num_iteration):
     z = np.random.uniform(low=0, high=1 / np.sqrt(k),
                           size=(len(set(train_data["question_id"])), k))
 
-    #####################################################################
+
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
-    #####################################################################
+
     mat = None
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
+
     return mat
 
 
@@ -119,25 +114,18 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
-    #####################################################################
+
     # TODO:                                                             #
     # (SVD) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
-    #####################################################################
-    pass
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
 
-    #####################################################################
+    pass
+
     # TODO:                                                             #
     # (ALS) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
-    #####################################################################
+
     pass
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
 
 
 if __name__ == "__main__":

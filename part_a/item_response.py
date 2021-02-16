@@ -21,9 +21,6 @@ def neg_log_likelihood(data, theta, beta):
     :param beta: Vector
     :return: float
     """
-    #####################################################################
-    # Implement the function as described in the docstring.             #
-    #####################################################################
     log_lklihood = 0.
     num_data = len(data["user_id"])
     for index in range(num_data):
@@ -36,9 +33,6 @@ def neg_log_likelihood(data, theta, beta):
         elif answer == 0:
             log_lklihood += - np.log(1+np.exp(d))
 
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
     return -log_lklihood
 
 
@@ -59,9 +53,7 @@ def update_theta_beta(data, lr, theta, beta):
     :param beta: Vector
     :return: tuple of vectors
     """
-    #####################################################################
-    # Implement the function as described in the docstring.             #
-    #####################################################################
+
     d_theta = np.zeros(theta.shape)
     d_beta = np.zeros(beta.shape)
     num_data = len(data["user_id"])
@@ -81,9 +73,6 @@ def update_theta_beta(data, lr, theta, beta):
     theta += lr*d_theta
     beta += lr*d_beta
 
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
     return theta, beta
 
 
@@ -147,10 +136,6 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
-    #####################################################################
-    # Tune learning rate and number of iterations. With the implemented #
-    # code, report the validation and test accuracy.                    #
-    #####################################################################
     lr = 0.01
     iterations = 20
 
@@ -172,21 +157,11 @@ def main():
     plt.ylabel("Validation accuracy")
     plt.show()
 
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
-
-    #####################################################################
-    # Implement part (c)
-    #####################################################################
     val_acc = evaluate(val_data, theta, beta)
     test_acc = evaluate(test_data, theta, beta)
     print("Validation accuracy: {}".format(val_acc))
     print("Test accuracy: {}".format(test_acc))
 
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
 
 
 if __name__ == "__main__":

@@ -65,19 +65,17 @@ class AutoEncoder(nn.Module):
         :param inputs: user vector.
         :return: user vector.
         """
-        #####################################################################
+
         # TODO:                                                             #
         # Implement the function as described in the docstring.             #
         # Use sigmoid activations for f and g.                              #
-        #####################################################################
+
         z1 = self.g.forward(inputs)
         h1 = F.sigmoid(z1)
         z2 = self.h.forward(h1)
         h2 = F.sigmoid(z2)
         out = h2
-        #####################################################################
-        #                       END OF YOUR CODE                            #
-        #####################################################################
+
         return out
 
 
@@ -130,9 +128,7 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
         lst_trainloss.append(train_loss)
         lst_validacc.append(valid_acc)
     return lst_trainloss, lst_validacc
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
+
 
 
 def gen_plot(lst1, lst2):
@@ -180,11 +176,6 @@ def evaluate(model, train_data, valid_data):
 def main():
     zero_train_matrix, train_matrix, valid_data, test_data = load_data()
 
-    #####################################################################
-    # TODO:                                                             #
-    # Try out 5 different k and select the best k using the             #
-    # validation set.                                                   #
-    #####################################################################
     num_questions = train_matrix.size()[1]
     num_users = train_matrix.size()[0]
     k_set = [10, 50, 100, 200, 500]
@@ -202,9 +193,7 @@ def main():
           valid_data, num_epoch)
     gen_plot(lst_trainloss,lst_validacc)
     print(evaluate(model, zero_train_matrix, test_data))
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
+
 
 
 if __name__ == "__main__":

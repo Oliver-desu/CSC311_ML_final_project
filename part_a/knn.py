@@ -42,9 +42,7 @@ def knn_impute_by_item(matrix, valid_data, k):
     mat = nbrs.fit_transform(matrix.T)
     acc = sparse_matrix_evaluate(valid_data, mat.T)
     print("Validation Accuracy on question: {}".format(acc))
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
+
     return acc
 
 
@@ -58,11 +56,11 @@ def main():
     print("Shape of sparse matrix:")
     print(sparse_matrix.shape)
 
-    #####################################################################
+
     # Compute the validation accuracy for each k. Then pick k* with     #
     # the best performance and report the test accuracy with the        #
     # chosen k*.                                                        #
-    #####################################################################
+
     k_set = [1, 6, 11, 16, 21, 26]
     acc1 = []
     for k in k_set:
@@ -86,9 +84,6 @@ def main():
     print("Test performance base on {0} with k = {1} is {2}"
           .format("item", k_2, test_acc2))
 
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
 
 
 if __name__ == "__main__":
